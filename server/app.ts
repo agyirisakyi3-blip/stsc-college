@@ -11,8 +11,9 @@ export function createApp() {
 
   app.use(express.json());
 
-  const staticPath =
-    process.env.NODE_ENV === "production"
+  const staticPath = process.env.VERCEL
+    ? path.resolve(process.cwd(), "dist", "public")
+    : process.env.NODE_ENV === "production"
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
 
