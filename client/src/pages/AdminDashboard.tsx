@@ -49,13 +49,24 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated]);
 
-  const loadApplications = () => {
+  const loadApplications = async () => {
+    try {
+      const res = await fetch('/api/applications');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) {
+          setApplications(data);
+          return;
+        }
+      }
+    } catch {
+      // fall back to localStorage
+    }
     const apps = JSON.parse(localStorage.getItem('applications') || '[]');
     setApplications(apps);
   };
 
   const handleLogin = () => {
-    // Simple password check (in production, use proper authentication)
     if (password === 'admin123') {
       setIsAuthenticated(true);
       setIsPasswordOpen(false);
@@ -65,14 +76,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteApplication = (id: string) => {
-    if (confirm('Are you sure you want to delete this application?')) {
-      const updated = applications.filter(app => app.id !== id);
-      localStorage.setItem('applications', JSON.stringify(updated));
-      setApplications(updated);
-      setSelectedApp(null);
-      toast.success('Application deleted');
+  const handleDeleteApplication = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this application?')) return;
+    try {
+      await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+    } catch {
+      // server delete best-effort
     }
+    const updated = applications.filter(app => app.id !== id);
+    localStorage.setItem('applications', JSON.stringify(updated));
+    setApplications(updated);
+    setSelectedApp(null);
+    toast.success('Application deleted');
   };
 
   const handleExportReply = (app: Application) => {

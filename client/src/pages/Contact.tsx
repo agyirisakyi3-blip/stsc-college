@@ -76,16 +76,22 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Store message in localStorage for demo
-      const messages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-      messages.push({
+      const payload = {
         ...formData,
-        timestamp: new Date().toISOString()
-      });
+        timestamp: new Date().toISOString(),
+      };
+
+      // Save locally as fallback
+      const messages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+      messages.push(payload);
       localStorage.setItem('contactMessages', JSON.stringify(messages));
+
+      // Send to server for email notification
+      await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
       toast.success('Message sent successfully! We\'ll get back to you soon.');
       setFormData({ name: '', email: '', subject: '', message: '' });

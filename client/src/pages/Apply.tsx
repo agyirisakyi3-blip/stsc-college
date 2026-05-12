@@ -151,21 +151,32 @@ export default function Apply() {
       // Store application in localStorage
       const applications = JSON.parse(localStorage.getItem('applications') || '[]');
       const appId = `APP-${Date.now()}`;
-      
-      applications.push({
+
+      // Read resume as base64
+      let resumeBase64: string | null = null;
+      if (formData.resume) {
+        resumeBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(",")[1]);
+          reader.readAsDataURL(formData.resume);
+        });
+      }
+
+      const appRecord = {
         id: appId,
         ...formData,
         resume: formData.resume?.name,
         courseTitle: selectedCourse?.title,
         aiAnalysis: analysis,
         submittedAt: new Date().toISOString(),
-        status: analysis.score >= 75 ? 'Approved' : 'Under Review'
-      });
+        status: analysis.score >= 75 ? 'Approved' : 'Under Review',
+      };
 
+      applications.push(appRecord);
       localStorage.setItem('applications', JSON.stringify(applications));
       setApplicationId(appId);
 
-      // Submit to server for Google Sheets storage (fire-and-forget)
+      // Submit to server for email notification + Google Sheets backup
       fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -179,6 +190,7 @@ export default function Apply() {
           bio: formData.bio,
           education: formData.education,
           resumeFileName: formData.resume?.name || null,
+          resumeBase64,
           submittedAt: new Date().toISOString(),
           status: analysis.score >= 75 ? 'Approved' : 'Under Review',
           aiScore: analysis.score,
