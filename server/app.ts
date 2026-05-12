@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Request, type Response } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { sendApplicationEmail } from "./email.js";
@@ -18,7 +18,7 @@ export function createApp() {
       : path.resolve(__dirname, "..", "dist", "public");
 
   // API route
-  app.post("/api/apply", async (req, res) => {
+  app.post("/api/apply", async (req: Request, res: Response) => {
     try {
       const sent = await sendApplicationEmail(req.body);
       console.log(
@@ -38,7 +38,7 @@ export function createApp() {
   app.use(express.static(staticPath));
 
   // SPA catch-all
-  app.get("*", (_req, res) => {
+  app.get("*", (_req: Request, res: Response) => {
     res.sendFile(path.join(staticPath, "index.html"));
   });
 
