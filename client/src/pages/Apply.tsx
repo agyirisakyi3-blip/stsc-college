@@ -108,8 +108,16 @@ export default function Apply() {
   const validateStep3 = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.agreement) newErrors.agreement = 'You must agree to the terms';
     if (!formData.paymentRef.trim()) newErrors.paymentRef = 'Please enter your MoMo transaction reference';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep4 = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.agreement) newErrors.agreement = 'You must agree to the terms';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -120,6 +128,8 @@ export default function Apply() {
       setStep(2);
     } else if (step === 2 && validateStep2()) {
       setStep(3);
+    } else if (step === 3 && validateStep3()) {
+      setStep(4);
     }
   };
 
@@ -128,8 +138,8 @@ export default function Apply() {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep3()) {
-      toast.error('Please complete all required fields');
+    if (!validateStep4()) {
+      toast.error('Please agree to the terms before submitting');
       return;
     }
 
@@ -231,7 +241,7 @@ export default function Apply() {
         }),
       }).catch((err) => console.error('Server submission failed:', err));
 
-      setStep(4);
+      setStep(5);
 
       // Email Content Construction
       const emailSubject = `New Admission Application - ${formData.name} (${dbData.id})`;
@@ -279,10 +289,10 @@ export default function Apply() {
         <div className="container max-w-2xl">
           {/* 3D Portal Frame */}
           {/* Progress Indicator */}
-          {step < 4 && (
+          {step < 5 && (
             <div className="mb-12">
               <div className="flex justify-between mb-4">
-                {[1, 2, 3].map(s => (
+                {[1, 2, 3, 4].map(s => (
                   <div
                     key={s}
                     className={`flex-1 h-2 rounded-full mx-1 transition-colors ${
@@ -292,7 +302,7 @@ export default function Apply() {
                 ))}
               </div>
               <p className="text-center text-muted-foreground">
-                {step === 1 ? 'Personal Information' : step === 2 ? 'Course & Background' : 'Review & Payment'} — Step {step} of 3
+                {step === 1 ? 'Personal Information' : step === 2 ? 'Course & Background' : step === 3 ? 'Payment' : 'Review & Submit'} — Step {step} of 4
               </p>
             </div>
           )}
@@ -478,10 +488,75 @@ export default function Apply() {
             </Card>
           )}
 
-          {/* Step 3: Review & Payment */}
+          {/* Step 3: Payment */}
           {step === 3 && (
             <Card className="card-spiritual p-10 border-t-4 border-l-4 border-b-8 border-r-8 border-t-accent border-l-accent/60 border-b-secondary border-r-secondary/70 shadow-[6px_8px_0px_0px_rgba(139,0,0,0.25),0_20px_40px_-10px_rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-[8px_10px_0px_0px_rgba(139,0,0,0.35),0_25px_50px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1">
-              <h2 className="text-2xl font-bold mb-6">Review & Payment</h2>
+              <h2 className="text-2xl font-bold mb-6">Application Fee Payment</h2>
+              <div className="space-y-6">
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <Smartphone className="text-green-600" size={20} />
+                    Pay via MTN Mobile Money
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    A non-refundable admission fee of <strong className="text-foreground">GHS {ADMISSION_FEE}.00</strong> is required to process your application.
+                  </p>
+                  <div className="bg-white rounded-lg p-4 border border-green-100 mb-4">
+                    <p className="text-sm font-semibold mb-2">Follow these steps:</p>
+                    <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                      <li>Dial <strong className="text-foreground">*170#</strong> on your phone</li>
+                      <li>Select <strong>Send Money</strong> / <strong>Mobile Money</strong></li>
+                      <li>Enter this number: <strong className="text-lg text-green-700">{MOMO_NUMBER}</strong></li>
+                      <li>Enter amount: <strong>GHS {ADMISSION_FEE}.00</strong></li>
+                      <li>Enter your PIN to confirm</li>
+                      <li>You will receive an SMS with your <strong>transaction reference</strong></li>
+                    </ol>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">Account Name: {MOMO_NAME}</p>
+                  <div>
+                    <label htmlFor="paymentRef" className="block text-sm font-semibold mb-1">
+                      Transaction Reference *
+                    </label>
+                    <input
+                      id="paymentRef"
+                      type="text"
+                      name="paymentRef"
+                      value={formData.paymentRef}
+                      onChange={handleChange}
+                      placeholder="Enter the reference from your MoMo SMS"
+                      className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
+                        errors.paymentRef
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-border bg-input focus:border-accent focus:outline-none'
+                      }`}
+                    />
+                    {errors.paymentRef && <p className="text-red-500 text-sm mt-1">{errors.paymentRef}</p>}
+                  </div>
+                </div>
+
+                {/* Navigation */}
+                <div className="flex gap-4 pt-6">
+                  <Button
+                    onClick={handleBack}
+                    className="btn-outline flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleNext}
+                    className="btn-primary flex-1"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Step 4: Review & Submit */}
+          {step === 4 && (
+            <Card className="card-spiritual p-10 border-t-4 border-l-4 border-b-8 border-r-8 border-t-accent border-l-accent/60 border-b-secondary border-r-secondary/70 shadow-[6px_8px_0px_0px_rgba(139,0,0,0.25),0_20px_40px_-10px_rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-[8px_10px_0px_0px_rgba(139,0,0,0.35),0_25px_50px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1">
+              <h2 className="text-2xl font-bold mb-6">Review & Submit</h2>
               <div className="space-y-6">
                 {/* Application Summary */}
                 <div className="bg-muted p-6 rounded-lg space-y-4">
@@ -503,48 +578,10 @@ export default function Apply() {
                       <p className="text-muted-foreground">Course</p>
                       <p className="font-semibold">{selectedCourse?.title}</p>
                     </div>
-                  </div>
-                </div>
-
-                {/* Payment Section */}
-                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
-                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                    <Smartphone className="text-green-600" size={20} />
-                    Admission Form Payment
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    A non-refundable admission fee of <strong className="text-foreground">GHS {ADMISSION_FEE}.00</strong> is required to process your application.
-                  </p>
-                  <div className="bg-white rounded-lg p-4 border border-green-100 mb-4">
-                    <p className="text-sm font-semibold mb-2">Pay via MTN Mobile Money:</p>
-                    <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                      <li>Dial <strong className="text-foreground">*170#</strong> on your phone</li>
-                      <li>Select <strong>Send Money</strong> / <strong>Mobile Money</strong></li>
-                      <li>Enter this number: <strong className="text-lg text-green-700">{MOMO_NUMBER}</strong></li>
-                      <li>Enter amount: <strong>GHS {ADMISSION_FEE}.00</strong></li>
-                      <li>Enter your PIN to confirm</li>
-                      <li>You will receive an SMS with your <strong>transaction reference</strong></li>
-                    </ol>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">Account Name: {MOMO_NAME}</p>
-                  <div>
-                    <label htmlFor="paymentRef" className="block text-sm font-semibold mb-1">
-                      Transaction Reference *
-                    </label>
-                    <input
-                      id="paymentRef"
-                      type="text"
-                      name="paymentRef"
-                      value={formData.paymentRef}
-                      onChange={handleChange}
-                      placeholder="Enter the reference from your MoMo SMS"
-                      className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
-                        errors.paymentRef
-                          ? 'border-red-500 bg-red-50'
-                          : 'border-border bg-input focus:border-accent focus:outline-none'
-                      }`}
-                    />
-                    {errors.paymentRef && <p className="text-red-500 text-sm mt-1">{errors.paymentRef}</p>}
+                    <div>
+                      <p className="text-muted-foreground">Payment Ref</p>
+                      <p className="font-semibold text-green-700">{formData.paymentRef}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -613,8 +650,8 @@ export default function Apply() {
             </Card>
           )}
 
-          {/* Step 4: Success */}
-          {step === 4 && (
+          {/* Step 5: Success */}
+          {step === 5 && (
             <Card className="card-spiritual p-10 text-center border-t-4 border-l-4 border-b-8 border-r-8 border-t-accent border-l-accent/60 border-b-secondary border-r-secondary/70 shadow-[6px_8px_0px_0px_rgba(139,0,0,0.25),0_20px_40px_-10px_rgba(0,0,0,0.25)] transition-all duration-300">
               <CheckCircle className="w-16 h-16 text-accent mx-auto mb-6" />
               <h2 className="text-3xl font-bold mb-4">Application Submitted!</h2>
