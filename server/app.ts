@@ -6,6 +6,7 @@ import { appendApplication, ensureSheetSetup } from "./google-sheets.js";
 import authRouter from "./routes/auth.js";
 import adminRouter from "./routes/admin.js";
 import paymentsRouter from "./routes/payments.js";
+import seedRouter from "./routes/seed.js";
 import { getDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,6 +33,9 @@ export function createApp() {
 
   // Payment routes
   app.use("/api/payments", paymentsRouter);
+
+  // Seed routes
+  app.use("/api/seed", seedRouter);
 
   // POST /api/applications — Submit application to DB
   app.post("/api/applications", async (req, res) => {
