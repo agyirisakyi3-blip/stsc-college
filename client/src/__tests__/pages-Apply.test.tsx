@@ -44,7 +44,8 @@ describe("Apply Page", () => {
 
   it("shows progress indicator on step 1", () => {
     render(<Apply />);
-    expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
+    expect(screen.getByText("Personal Information")).toBeInTheDocument();
+    expect(document.body.textContent).toContain("Step 1 of 4");
   });
 
   it("validates step 1 fields", async () => {
@@ -128,7 +129,7 @@ describe("Apply Page", () => {
     expect(screen.getByText("Bio must be at least 20 characters")).toBeInTheDocument();
   });
 
-  it("validates agreement checkbox on step 3", async () => {
+  it("validates agreement checkbox on step 4", async () => {
     const user = userEvent.setup();
     render(<Apply />);
 
@@ -147,6 +148,12 @@ describe("Apply Page", () => {
 
     await user.click(screen.getByText("Next"));
 
+    // Step 3: Payment — enter manual reference to proceed
+    const refInput = screen.getByPlaceholderText("Or enter reference manually");
+    await user.type(refInput, "MOMO-REF-12345");
+    await user.click(screen.getByText(/Next \(Payment Entered\)/i));
+
+    // Step 4: Review & Submit
     await user.click(screen.getByText("Submit Application"));
 
     expect(screen.getByText("You must agree to the terms")).toBeInTheDocument();

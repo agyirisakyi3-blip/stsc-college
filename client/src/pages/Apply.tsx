@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, Upload, Smartphone } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Smartphone, Banknote, Loader2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import coursesData from '@/data/courses.json';
@@ -13,6 +13,12 @@ import { useSEO, SEO } from '@/hooks/useSEO';
 const ADMISSION_FEE = 100;
 const MOMO_NUMBER = import.meta.env.VITE_MOMO_NUMBER || "233257077972";
 const MOMO_NAME = import.meta.env.VITE_MOMO_NAME || "Success Theological Seminary";
+const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "";
+const MOMO_NETWORKS = [
+  { id: "mtn", label: "MTN Mobile Money", code: "*170#" },
+  { id: "vodafone", label: "Vodafone Cash", code: "*110#" },
+  { id: "airteltigo", label: "AirtelTigo Money", code: "*888#" },
+];
 
 /**
  * Application Portal Page
@@ -39,11 +45,17 @@ export default function Apply() {
     education: '',
     resume: null as File | null,
     agreement: false,
-    paymentRef: ''
+    paymentRef: '',
+    paymentChannel: '',
+    paymentNetwork: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [isPaying, setIsPaying] = useState(false);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card' | 'direct_momo' | ''>('');
+  const [directChargeStatus, setDirectChargeStatus] = useState('');
 
   const courses = coursesData;
 
@@ -108,7 +120,9 @@ export default function Apply() {
   const validateStep3 = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.paymentRef.trim()) newErrors.paymentRef = 'Please enter your MoMo transaction reference';
+    if (!paymentVerified && !formData.paymentRef.trim()) {
+      newErrors.paymentRef = 'Please complete the payment to continue';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -121,6 +135,123 @@ export default function Apply() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePayWithPaystack = async (channel: 'momo' | 'card') => {
+    if (channel === 'momo' && !formData.paymentNetwork) {
+      toast.error('Please select your mobile money network');
+      return;
+    }
+
+    setIsPaying(true);
+    setPaymentMethod(channel);
+
+    try {
+      const body: any = {
+        email: formData.email,
+        amount: ADMISSION_FEE,
+        metadata: {
+          applicant_name: formData.name,
+          applicant_phone: formData.phone,
+          source: 'stsc-college',
+        },
+      };
+
+      if (channel === 'momo') {
+        body.phone = formData.phone;
+        body.network = formData.paymentNetwork;
+      }
+
+      const endpoint = channel === 'momo' ? '/api/payments/initialize-momo' : '/api/payments/initialize';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to initialize payment');
+      }
+
+      if (channel === 'card') {
+        window.location.href = data.authorizationUrl;
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, paymentRef: data.reference }));
+      setPaymentVerified(true);
+      setFormData(prev => ({ ...prev, paymentChannel: `momo_${formData.paymentNetwork}` }));
+      toast.success('Payment initiated! Complete the payment on your phone.');
+    } catch (error: any) {
+      toast.error(error.message || 'Payment failed. Please try again.');
+      setPaymentMethod('');
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
+  const handleDirectMoMoCharge = async () => {
+    if (!formData.paymentNetwork) {
+      toast.error('Please select your mobile money network');
+      return;
+    }
+
+    setIsPaying(true);
+    setPaymentMethod('direct_momo');
+
+    try {
+      const res = await fetch('/api/payments/charge-momo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          amount: ADMISSION_FEE,
+          phone: formData.phone,
+          network: formData.paymentNetwork,
+          metadata: {
+            applicant_name: formData.name,
+            applicant_phone: formData.phone,
+            source: 'stsc-college',
+          },
+        }),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to initiate charge');
+      }
+
+      setFormData(prev => ({ ...prev, paymentRef: data.reference }));
+      setDirectChargeStatus('Payment request sent to your phone. Enter the MoMo PIN on your phone to complete.');
+      toast.success('Payment request sent! Check your phone.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send payment request');
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!formData.paymentRef) return;
+
+    setIsPaying(true);
+    try {
+      const res = await fetch(`/api/payments/verify/${formData.paymentRef}`);
+      const data = await res.json();
+
+      if (data.verified) {
+        setPaymentVerified(true);
+        setFormData(prev => ({ ...prev, paymentChannel: data.channel || prev.paymentChannel }));
+        toast.success('Payment verified successfully!');
+      } else {
+        toast.error('Payment not yet confirmed. Please try again after completing payment.');
+      }
+    } catch {
+      toast.error('Failed to verify payment');
+    } finally {
+      setIsPaying(false);
+    }
   };
 
   const handleNext = () => {
@@ -170,11 +301,12 @@ export default function Apply() {
 
       // Read resume as base64
       let resumeBase64: string | null = null;
-      if (formData.resume) {
+      const resumeFile = formData.resume;
+      if (resumeFile) {
         resumeBase64 = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve((reader.result as string).split(",")[1]);
-          reader.readAsDataURL(formData.resume);
+          reader.readAsDataURL(resumeFile);
         });
       }
 
@@ -187,6 +319,8 @@ export default function Apply() {
         submittedAt: new Date().toISOString(),
         status: analysis.score >= 75 ? 'Approved' : 'Under Review',
       };
+
+      const paymentChannel = formData.paymentChannel || (paymentVerified ? 'verified' : '');
 
       applications.push(appRecord);
       localStorage.setItem('applications', JSON.stringify(applications));
@@ -207,6 +341,7 @@ export default function Apply() {
           aiSummary: analysis.summary,
           aiConcerns: analysis.concerns,
           paymentRef: formData.paymentRef,
+          paymentChannel: paymentChannel,
         }),
       });
 
@@ -493,46 +628,142 @@ export default function Apply() {
             <Card className="card-spiritual p-10 border-t-4 border-l-4 border-b-8 border-r-8 border-t-accent border-l-accent/60 border-b-secondary border-r-secondary/70 shadow-[6px_8px_0px_0px_rgba(139,0,0,0.25),0_20px_40px_-10px_rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-[8px_10px_0px_0px_rgba(139,0,0,0.35),0_25px_50px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1">
               <h2 className="text-2xl font-bold mb-6">Application Fee Payment</h2>
               <div className="space-y-6">
-                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
-                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                    <Smartphone className="text-green-600" size={20} />
-                    Pay via MTN Mobile Money
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    A non-refundable admission fee of <strong className="text-foreground">GHS {ADMISSION_FEE}.00</strong> is required to process your application.
+                <div className="bg-accent/5 border border-accent/20 rounded-lg p-6">
+                  <h3 className="font-bold text-lg mb-3">Admission Fee: <span className="text-accent">GHS {ADMISSION_FEE}.00</span></h3>
+                  <p className="text-sm text-muted-foreground">
+                    A non-refundable admission fee is required to process your application.
+                    Choose your preferred payment method below.
                   </p>
-                  <div className="bg-white rounded-lg p-4 border border-green-100 mb-4">
-                    <p className="text-sm font-semibold mb-2">Follow these steps:</p>
-                    <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                      <li>Dial <strong className="text-foreground">*170#</strong> on your phone</li>
-                      <li>Select <strong>Send Money</strong> / <strong>Mobile Money</strong></li>
-                      <li>Enter this number: <strong className="text-lg text-green-700">{MOMO_NUMBER}</strong></li>
-                      <li>Enter amount: <strong>GHS {ADMISSION_FEE}.00</strong></li>
-                      <li>Enter your PIN to confirm</li>
-                      <li>You will receive an SMS with your <strong>transaction reference</strong></li>
-                    </ol>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-4">Account Name: {MOMO_NAME}</p>
-                  <div>
-                    <label htmlFor="paymentRef" className="block text-sm font-semibold mb-1">
-                      Transaction Reference *
-                    </label>
-                    <input
-                      id="paymentRef"
-                      type="text"
-                      name="paymentRef"
-                      value={formData.paymentRef}
-                      onChange={handleChange}
-                      placeholder="Enter the reference from your MoMo SMS"
-                      className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
-                        errors.paymentRef
-                          ? 'border-red-500 bg-red-50'
-                          : 'border-border bg-input focus:border-accent focus:outline-none'
-                      }`}
-                    />
-                    {errors.paymentRef && <p className="text-red-500 text-sm mt-1">{errors.paymentRef}</p>}
-                  </div>
                 </div>
+
+                {!paymentVerified ? (
+                  <>
+                    {/* Mobile Money Option */}
+                    <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                      <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Smartphone className="text-green-600" size={20} />
+                        Pay with Mobile Money
+                      </h3>
+
+                      <div className="mb-4">
+                        <label className="block text-sm font-semibold mb-2">Select Network</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          {MOMO_NETWORKS.map(net => (
+                            <label
+                              key={net.id}
+                              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                                formData.paymentNetwork === net.id
+                                  ? 'border-green-500 bg-green-100'
+                                  : 'border-green-200 bg-white hover:border-green-300'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="paymentNetwork"
+                                value={net.id}
+                                checked={formData.paymentNetwork === net.id}
+                                onChange={handleChange}
+                                className="accent-green-600"
+                              />
+                              <div>
+                                <p className="font-semibold text-sm">{net.label}</p>
+                                <p className="text-xs text-muted-foreground">Dial {net.code} to pay</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => handlePayWithPaystack('momo')}
+                        disabled={isPaying || !formData.paymentNetwork}
+                        className="bg-green-600 hover:bg-green-700 text-white w-full border-none shadow-md"
+                      >
+                        {isPaying && paymentMethod === 'momo' ? (
+                          <><Loader2 className="animate-spin mr-2" size={18} /> Processing...</>
+                        ) : (
+                          <><Smartphone className="mr-2" size={18} /> Pay GHS {ADMISSION_FEE} with MoMo</>
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={handleDirectMoMoCharge}
+                        disabled={isPaying || !formData.paymentNetwork}
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white w-full border-none shadow-md mt-2"
+                      >
+                        {isPaying && paymentMethod === 'direct_momo' ? (
+                          <><Loader2 className="animate-spin mr-2" size={18} /> Sending request...</>
+                        ) : (
+                          <><Smartphone className="mr-2" size={18} /> Direct Charge to My Phone</>
+                        )}
+                      </Button>
+                      {directChargeStatus && (
+                        <p className="text-sm text-emerald-700 mt-2 bg-emerald-50 p-2 rounded">{directChargeStatus}</p>
+                      )}
+
+                      <div className="mt-4 p-3 bg-white rounded-lg border border-green-100">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Alternative:</strong> Send directly to <strong>{MOMO_NUMBER}</strong> (Name: {MOMO_NAME}),
+                          then enter the reference below:
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            name="paymentRef"
+                            value={formData.paymentRef}
+                            onChange={handleChange}
+                            placeholder="Or enter reference manually"
+                            className="flex-1 px-3 py-2 rounded-lg border-2 border-border bg-input focus:border-accent focus:outline-none text-sm"
+                          />
+                          {formData.paymentRef && (
+                            <Button
+                              onClick={handleVerifyPayment}
+                              disabled={isPaying}
+                              className="bg-green-600 hover:bg-green-700 text-white border-none text-sm px-4"
+                            >
+                              {isPaying ? <Loader2 className="animate-spin" size={16} /> : 'Verify'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Option */}
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                      <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Banknote className="text-blue-600" size={20} />
+                        Pay with Card / Bank Transfer
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Pay securely with your debit/credit card or bank transfer via Paystack.
+                      </p>
+                      <Button
+                        onClick={() => handlePayWithPaystack('card')}
+                        disabled={isPaying}
+                        className="bg-blue-600 hover:bg-blue-700 text-white w-full border-none shadow-md"
+                      >
+                        {isPaying && paymentMethod === 'card' ? (
+                          <><Loader2 className="animate-spin mr-2" size={18} /> Redirecting...</>
+                        ) : (
+                          <><Banknote className="mr-2" size={18} /> Pay GHS {ADMISSION_FEE} with Card</>
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center">
+                    <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                    <h3 className="font-bold text-lg text-green-700 mb-2">Payment Received!</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Reference: <strong className="text-foreground">{formData.paymentRef}</strong>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Your payment has been recorded. Click Next to continue.
+                    </p>
+                  </div>
+                )}
+
+                {errors.paymentRef && <p className="text-red-500 text-sm">{errors.paymentRef}</p>}
 
                 {/* Navigation */}
                 <div className="flex gap-4 pt-6">
@@ -544,9 +775,10 @@ export default function Apply() {
                   </Button>
                   <Button
                     onClick={handleNext}
+                    disabled={!paymentVerified && !formData.paymentRef.trim()}
                     className="btn-primary flex-1"
                   >
-                    Next
+                    {paymentVerified ? 'Next' : formData.paymentRef ? 'Next (Payment Entered)' : 'Complete Payment to Continue'}
                   </Button>
                 </div>
               </div>

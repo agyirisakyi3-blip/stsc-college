@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckCircle, AlertCircle, Eye, Trash2, Download } from 'lucide-react';
+import { CheckCircle, AlertCircle, Eye, Trash2, Download, Smartphone, Banknote, ShieldCheck, RotateCcw, BarChart3, PieChart, TrendingUp, Loader2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, Legend } from 'recharts';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
@@ -24,6 +25,10 @@ interface Application {
   };
   submittedAt: string;
   status: string;
+  paymentRef?: string;
+  paymentChannel?: string;
+  paymentStatus?: string;
+  paymentAmount?: number;
 }
 
 /**
@@ -42,6 +47,10 @@ export default function AdminDashboard() {
   const [isPasswordOpen, setIsPasswordOpen] = useState(true);
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [refunding, setRefunding] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -64,6 +73,44 @@ export default function AdminDashboard() {
     }
     const apps = JSON.parse(localStorage.getItem('applications') || '[]');
     setApplications(apps);
+  };
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch('/api/payments/analytics');
+      const data = await res.json();
+      if (data.success) {
+        setAnalytics(data.analytics);
+      }
+    } catch {
+      // analytics best-effort
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleRefund = async (reference: string) => {
+    if (!confirm('Are you sure you want to refund this payment?')) return;
+    setRefunding(true);
+    try {
+      const res = await fetch('/api/payments/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Refund failed');
+      }
+      toast.success('Refund processed successfully');
+      loadApplications();
+      if (analytics) loadAnalytics();
+    } catch (error: any) {
+      toast.error(error.message || 'Refund failed');
+    } finally {
+      setRefunding(false);
+    }
   };
 
   const handleLogin = () => {
@@ -111,7 +158,9 @@ export default function AdminDashboard() {
   const stats = {
     total: applications.length,
     approved: applications.filter(a => a.status === 'Approved').length,
-    underReview: applications.filter(a => a.status === 'Under Review').length
+    underReview: applications.filter(a => a.status === 'Under Review').length,
+    paid: applications.filter(a => a.paymentStatus === 'PAID' || a.paymentStatus === 'VERIFIED' || a.paymentRef).length,
+    pending: applications.filter(a => !a.paymentRef).length,
   };
 
   if (!isAuthenticated) {
@@ -171,10 +220,10 @@ export default function AdminDashboard() {
       {/* Statistics */}
       <section className="py-12 bg-background">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12">
             <Card className="card-spiritual p-6 text-center">
               <p className="text-4xl font-bold text-accent mb-2">{stats.total}</p>
-              <p className="text-muted-foreground">Total Applications</p>
+              <p className="text-muted-foreground">Total</p>
             </Card>
             <Card className="card-spiritual p-6 text-center">
               <p className="text-4xl font-bold text-green-500 mb-2">{stats.approved}</p>
@@ -184,7 +233,126 @@ export default function AdminDashboard() {
               <p className="text-4xl font-bold text-yellow-500 mb-2">{stats.underReview}</p>
               <p className="text-muted-foreground">Under Review</p>
             </Card>
+            <Card className="card-spiritual p-6 text-center bg-green-50 border-green-200">
+              <p className="text-4xl font-bold text-green-600 mb-2">{stats.paid}</p>
+              <p className="text-muted-foreground">Paid</p>
+            </Card>
+            <Card className="card-spiritual p-6 text-center bg-yellow-50 border-yellow-200">
+              <p className="text-4xl font-bold text-yellow-600 mb-2">{stats.pending}</p>
+              <p className="text-muted-foreground">Payment Pending</p>
+            </Card>
           </div>
+
+          {/* Analytics Toggle */}
+          <div className="mb-6">
+            <Button
+              onClick={() => {
+                setShowAnalytics(!showAnalytics);
+                if (!showAnalytics && !analytics) loadAnalytics();
+              }}
+              className="btn-outline"
+            >
+              <BarChart3 size={18} className="mr-2" />
+              {showAnalytics ? 'Hide Analytics' : 'Show Payment Analytics'}
+            </Button>
+          </div>
+
+          {showAnalytics && (
+            <div className="mb-8">
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="animate-spin mr-2" size={24} />
+                  <span>Loading analytics...</span>
+                </div>
+              ) : analytics ? (
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card className="p-4 text-center">
+                      <p className="text-3xl font-bold text-accent">{analytics.total}</p>
+                      <p className="text-sm text-muted-foreground">Total Apps</p>
+                    </Card>
+                    <Card className="p-4 text-center bg-green-50 border-green-200">
+                      <p className="text-3xl font-bold text-green-600">{analytics.paid}</p>
+                      <p className="text-sm text-muted-foreground">Paid</p>
+                    </Card>
+                    <Card className="p-4 text-center bg-red-50 border-red-200">
+                      <p className="text-3xl font-bold text-red-600">{analytics.unpaid}</p>
+                      <p className="text-sm text-muted-foreground">Unpaid</p>
+                    </Card>
+                    <Card className="p-4 text-center">
+                      <p className="text-3xl font-bold text-accent">GHS {analytics.totalRevenue.toFixed(0)}</p>
+                      <p className="text-sm text-muted-foreground">Revenue</p>
+                    </Card>
+                  </div>
+
+                  {/* Charts */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Monthly Revenue Chart */}
+                    <Card className="p-6">
+                      <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <TrendingUp size={18} /> Monthly Revenue
+                      </h3>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={analytics.monthly}>
+                          <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Bar dataKey="revenue" fill="#8B0000" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Card>
+
+                    {/* Channel Breakdown */}
+                    <Card className="p-6">
+                      <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <PieChart size={18} /> Payment Channels
+                      </h3>
+                      {analytics.channelBreakdown.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={200}>
+                          <RePieChart>
+                            <Pie
+                              data={analytics.channelBreakdown}
+                              dataKey="count"
+                              nameKey="channel"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={70}
+                              label={({ channel, count }) => `${channel}: ${count}`}
+                            >
+                              {analytics.channelBreakdown.map((_: any, i: number) => (
+                                <Cell key={i} fill={['#8B0000', '#16a34a', '#2563eb', '#d97706'][i % 4]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </RePieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <p className="text-muted-foreground text-sm py-8 text-center">No payment data yet</p>
+                      )}
+                    </Card>
+                  </div>
+
+                  {/* Monthly Volume Chart */}
+                  <Card className="p-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                      <BarChart3 size={18} /> Monthly Payment Volume
+                    </h3>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart data={analytics.monthly}>
+                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">Failed to load analytics</p>
+              )}
+            </div>
+          )}
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-8">
@@ -207,14 +375,15 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-border">
-                  <th className="text-left py-4 px-4 font-bold">Name</th>
-                  <th className="text-left py-4 px-4 font-bold">Course</th>
-                  <th className="text-left py-4 px-4 font-bold">Score</th>
-                  <th className="text-left py-4 px-4 font-bold">Status</th>
-                  <th className="text-left py-4 px-4 font-bold">Date</th>
-                  <th className="text-left py-4 px-4 font-bold">Actions</th>
-                </tr>
+                  <tr className="border-b-2 border-border">
+                    <th className="text-left py-4 px-4 font-bold">Name</th>
+                    <th className="text-left py-4 px-4 font-bold">Course</th>
+                    <th className="text-left py-4 px-4 font-bold">Score</th>
+                    <th className="text-left py-4 px-4 font-bold">Payment</th>
+                    <th className="text-left py-4 px-4 font-bold">Status</th>
+                    <th className="text-left py-4 px-4 font-bold">Date</th>
+                    <th className="text-left py-4 px-4 font-bold">Actions</th>
+                  </tr>
               </thead>
               <tbody>
                 {filteredApplications.map(app => (
@@ -231,6 +400,18 @@ export default function AdminDashboard() {
                         </div>
                         <span className="font-bold text-sm">{app.aiAnalysis.score}%</span>
                       </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      {app.paymentRef ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                          <Smartphone size={12} />
+                          {app.paymentChannel?.includes('momo') ? 'MoMo' : app.paymentChannel || 'Paid'}
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                          Unpaid
+                        </span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -297,6 +478,26 @@ export default function AdminDashboard() {
                       {new Date(selectedApp.submittedAt).toLocaleDateString()}
                     </p>
                   </div>
+                  {selectedApp.paymentRef && (
+                    <>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Payment Ref</p>
+                        <p className="font-semibold text-sm font-mono">{selectedApp.paymentRef}</p>
+                      </div>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Payment Channel</p>
+                        <p className="font-semibold text-sm flex items-center gap-1">
+                          {selectedApp.paymentChannel?.includes('momo') ? (
+                            <><Smartphone size={14} className="text-green-600" /> Mobile Money</>
+                          ) : selectedApp.paymentChannel?.includes('card') ? (
+                            <><Banknote size={14} className="text-blue-600" /> Card</>
+                          ) : (
+                            <><ShieldCheck size={14} className="text-green-600" /> {selectedApp.paymentChannel || 'Verified'}</>
+                          )}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Bio & Education */}
@@ -366,6 +567,16 @@ export default function AdminDashboard() {
                     <Download size={18} className="mr-2" />
                     Export Reply
                   </Button>
+                  {selectedApp.paymentRef && selectedApp.paymentStatus !== 'REFUNDED' && (
+                    <Button
+                      onClick={() => handleRefund(selectedApp.paymentRef!)}
+                      disabled={refunding}
+                      className="bg-orange-600 hover:bg-orange-700 text-white border-none flex-1"
+                    >
+                      <RotateCcw size={18} className="mr-2" />
+                      {refunding ? 'Refunding...' : 'Refund'}
+                    </Button>
+                  )}
                   <Button
                     onClick={() => handleDeleteApplication(selectedApp.id)}
                     className="btn-outline flex-1"

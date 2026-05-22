@@ -13,6 +13,7 @@ import Apply from "./pages/Apply";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminRouter from "./pages/AdminRouter";
+import PaymentHistory from "./pages/PaymentHistory";
 import FloatingWhatsApp from "./components/FloatingWhatsApp";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/apply" component={Apply} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/payment-history" component={PaymentHistory} />
       <Route path="/admin" component={AdminRouter} />
       <Route path="/admin/:rest*" component={AdminRouter} />
       <Route path={"/404"} component={NotFound} />

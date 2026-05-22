@@ -113,9 +113,9 @@ describe("AdminDashboard", () => {
     await user.type(screen.getByPlaceholderText("Enter admin password"), "admin123");
     await user.click(screen.getByText("Login"));
 
-    expect(screen.getByText("Total Applications")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getAllByText("1")).toHaveLength(2); // one for approved count, one for under review
+    expect(screen.getByText("Total")).toBeInTheDocument();
+    expect(screen.getAllByText("2")).toHaveLength(2); // total apps + payment pending
+    expect(screen.getAllByText("1")).toHaveLength(2); // approved + under review
   });
 
   it("filters applications by status", async () => {

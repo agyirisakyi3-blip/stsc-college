@@ -5,6 +5,7 @@ import { sendApplicationEmail, sendContactEmail } from "./email.js";
 import { appendApplication, ensureSheetSetup } from "./google-sheets.js";
 import authRouter from "./routes/auth.js";
 import adminRouter from "./routes/admin.js";
+import paymentsRouter from "./routes/payments.js";
 import { getDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,10 +30,13 @@ export function createApp() {
   // Admin routes (authenticated + admin-only)
   app.use("/api/admin", adminRouter);
 
+  // Payment routes
+  app.use("/api/payments", paymentsRouter);
+
   // POST /api/applications — Submit application to DB
   app.post("/api/applications", async (req, res) => {
     try {
-      const { name, email, phone, courseTitle, bio, education, aiScore, aiSummary, aiConcerns, paymentRef } = req.body;
+      const { name, email, phone, courseTitle, bio, education, aiScore, aiSummary, aiConcerns, paymentRef, paymentChannel } = req.body;
       const db = await getDb();
       const program = await db.program.findFirst({ where: { title: courseTitle } });
       if (!program) {
@@ -45,6 +49,7 @@ export function createApp() {
           aiSummary: aiSummary || null,
           aiConcerns: aiConcerns ? JSON.stringify(aiConcerns) : null,
           paymentRef: paymentRef || null,
+          paymentChannel: paymentChannel || null,
           paymentAmount: 100,
           paymentStatus: paymentRef ? "PAID" : "UNPAID",
           paidAt: paymentRef ? new Date() : null,

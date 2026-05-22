@@ -68,6 +68,7 @@ model Application {
   aiReply      String?
 
   paymentRef      String?
+  paymentChannel  String?
   paymentStatus   String    @default("UNPAID")
   paymentAmount   Float     @default(100)
   paidAt          DateTime?

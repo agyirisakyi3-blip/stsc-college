@@ -7,7 +7,7 @@ vi.mock("../pages/About", () => ({ default: () => <div data-testid="page-about">
 vi.mock("../pages/Courses", () => ({ default: () => <div data-testid="page-courses">Courses</div> }));
 vi.mock("../pages/Contact", () => ({ default: () => <div data-testid="page-contact">Contact</div> }));
 vi.mock("../pages/Apply", () => ({ default: () => <div data-testid="page-apply">Apply</div> }));
-vi.mock("../pages/AdminDashboard", () => ({ default: () => <div data-testid="page-admin">Admin</div> }));
+vi.mock("../pages/AdminRouter", () => ({ default: () => <div data-testid="page-admin">Admin</div> }));
 vi.mock("../pages/NotFound", () => ({ default: () => <div data-testid="page-notfound">404</div> }));
 
 vi.mock("../components/Navigation", () => ({ default: () => <nav data-testid="navigation" /> }));
