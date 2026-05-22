@@ -28,7 +28,7 @@ router.get("/stats", async (_req: Request, res: Response) => {
       totalPrograms: programs,
       totalApplications: applications,
       applicationsByStatus: Object.fromEntries(
-        statusCounts.map((s) => [s.status, s._count])
+        statusCounts.map((s: any) => [s.status, s._count])
       ),
     });
   } catch (error) {
@@ -99,7 +99,7 @@ router.get("/applications", async (req: Request, res: Response) => {
       include: { program: { select: { title: true } } },
       orderBy: { submittedAt: "desc" },
     });
-    const mapped = applications.map((a) => ({
+    const mapped = applications.map((a: any) => ({
       ...a,
       outcomes: undefined,
       courseTitle: a.program.title,

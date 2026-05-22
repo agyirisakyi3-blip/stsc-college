@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma-pg"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  STUDENT
+}
+
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+}
+
+model Program {
+  id               String   @id @default(cuid())
+  title            String
+  summary          String
+  fullDescription  String
+  department       String
+  duration         String
+  prerequisites    String   @default("None")
+  thumbnail        String?
+  instructor       String   @default("Faculty Board")
+  capacity         Int?
+  startDate        String?
+  schedule         String?
+  outcomes         String   @default("[]")
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  applications Application[]
+}
+
+model Application {
+  id           String            @id @default(cuid())
+  name         String
+  email        String
+  phone        String
+  bio          String?
+  education    String?
+  resumePath   String?
+  status       ApplicationStatus @default(PENDING)
+  aiScore      Int?
+  aiSummary    String?
+  aiConcerns   String?
+  aiReply      String?
+  submittedAt  DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
+}
