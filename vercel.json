@@ -1,5 +1,5 @@
 {
-  "buildCommand": "PRISMA_SCHEMA=prisma/schema.pg.prisma npx prisma db push --accept-data-loss && npx prisma generate && node scripts/patch-prisma-client.mjs && vite build",
+  "buildCommand": "PRISMA_SCHEMA=prisma/schema.pg.prisma npx prisma db push --accept-data-loss && PRISMA_SCHEMA=prisma/schema.pg.prisma npx prisma generate && node scripts/patch-prisma-client.mjs && vite build",
   "outputDirectory": "dist/public",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api" }
