@@ -73,9 +73,9 @@ router.post("/", async (_req: Request, res: Response) => {
     }
 
     res.json({ success: true, messages: results });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[seed] error:", error);
-    res.status(500).json({ success: false, error: "Seed failed" });
+    res.status(500).json({ success: false, error: "Seed failed", detail: error?.message || String(error) });
   }
 });
 
