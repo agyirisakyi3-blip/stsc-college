@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma-pg"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -66,6 +66,12 @@ model Application {
   aiSummary    String?
   aiConcerns   String?
   aiReply      String?
+
+  paymentRef      String?
+  paymentStatus   String    @default("UNPAID")
+  paymentAmount   Float     @default(100)
+  paidAt          DateTime?
+
   submittedAt  DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 

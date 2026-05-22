@@ -3,7 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
-  LayoutDashboard, BookOpen, Users, FileText, Settings, LogOut, Menu, X, ChevronRight,
+  LayoutDashboard, BookOpen, Users, FileText, Settings, LogOut, Menu, X, ChevronRight, ExternalLink,
 } from "lucide-react";
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/admin/applications", label: "Applications", icon: FileText },
   { path: "/admin/users", label: "Users", icon: Users },
   { path: "/admin/settings", label: "Settings", icon: Settings },
+  { path: "/apply", label: "Application Portal", icon: ExternalLink, external: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -43,19 +44,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="p-3 space-y-1">
           {navItems.map((item) => {
             const active = location === item.path;
+            const Tag = item.external ? "a" : Link;
+            const props = item.external
+              ? { href: item.path, onClick: () => setSidebarOpen(false) }
+              : { href: item.path, onClick: () => setSidebarOpen(false) };
             return (
-              <Link
+              <Tag
                 key={item.path}
-                href={item.path}
-                onClick={() => setSidebarOpen(false)}
+                {...props}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  item.external
+                    ? "text-muted-foreground hover:bg-muted hover:text-foreground border-t border-border mt-2 pt-3"
+                    : active
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 <item.icon size={18} />
                 {item.label}
-                {active && <ChevronRight size={16} className="ml-auto" />}
-              </Link>
+                {active && !item.external && <ChevronRight size={16} className="ml-auto" />}
+              </Tag>
             );
           })}
         </nav>

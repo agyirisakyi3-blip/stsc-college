@@ -6,6 +6,7 @@ import Dashboard from "./admin/Dashboard";
 import Programs from "./admin/Programs";
 import Applications from "./admin/Applications";
 import Users from "./admin/Users";
+import Settings from "./admin/Settings";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ export default function AdminRouter() {
           <Route path="/admin/programs" component={Programs} />
           <Route path="/admin/applications" component={Applications} />
           <Route path="/admin/users" component={Users} />
+          <Route path="/admin/settings" component={Settings} />
           <Route>
             <div className="text-center py-20">
               <h2 className="text-xl font-bold mb-2">404</h2>

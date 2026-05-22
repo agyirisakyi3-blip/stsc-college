@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, Upload } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Smartphone } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import coursesData from '@/data/courses.json';
 import { analyzeApplication, ApplicationData } from '@/lib/manus';
 import { toast } from 'sonner';
 import { useSEO, SEO } from '@/hooks/useSEO';
+
+const ADMISSION_FEE = 100;
+const MOMO_NUMBER = import.meta.env.VITE_MOMO_NUMBER || "233257077972";
+const MOMO_NAME = import.meta.env.VITE_MOMO_NAME || "Success Theological Seminary";
 
 /**
  * Application Portal Page
@@ -34,7 +38,8 @@ export default function Apply() {
     bio: '',
     education: '',
     resume: null as File | null,
-    agreement: false
+    agreement: false,
+    paymentRef: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -104,6 +109,7 @@ export default function Apply() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.agreement) newErrors.agreement = 'You must agree to the terms';
+    if (!formData.paymentRef.trim()) newErrors.paymentRef = 'Please enter your MoMo transaction reference';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -123,7 +129,7 @@ export default function Apply() {
 
   const handleSubmit = async () => {
     if (!validateStep3()) {
-      toast.error('Please agree to the terms and conditions');
+      toast.error('Please complete all required fields');
       return;
     }
 
@@ -176,12 +182,37 @@ export default function Apply() {
       localStorage.setItem('applications', JSON.stringify(applications));
       setApplicationId(appId);
 
+      // Submit to DB
+      const dbRes = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          courseTitle: selectedCourse?.title,
+          bio: formData.bio,
+          education: formData.education,
+          aiScore: analysis.score,
+          aiSummary: analysis.summary,
+          aiConcerns: analysis.concerns,
+          paymentRef: formData.paymentRef,
+        }),
+      });
+
+      if (!dbRes.ok) {
+        const errData = await dbRes.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to submit to database');
+      }
+
+      const dbData = await dbRes.json();
+
       // Submit to server for email notification + Google Sheets backup
       fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: appId,
+          id: dbData.id,
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
@@ -196,27 +227,27 @@ export default function Apply() {
           aiScore: analysis.score,
           aiSummary: analysis.summary,
           aiConcerns: analysis.concerns,
+          paymentRef: formData.paymentRef,
         }),
       }).catch((err) => console.error('Server submission failed:', err));
 
       setStep(4);
 
       // Email Content Construction
-      const emailSubject = `New Admission Application - ${formData.name} (${appId})`;
-      const emailBody = `Dear Admissions Team,\n\nI have submitted an application for the following course: ${selectedCourse?.title}.\n\nApplication Details:\n- Name: ${formData.name}\n- Email: ${formData.email}\n- Phone: ${formData.phone}\n- ID: ${appId}\n\nKind regards,\n${formData.name}`;
+      const emailSubject = `New Admission Application - ${formData.name} (${dbData.id})`;
+      const emailBody = `Dear Admissions Team,\n\nI have submitted an application for the following course: ${selectedCourse?.title}.\n\nApplication Details:\n- Name: ${formData.name}\n- Email: ${formData.email}\n- Phone: ${formData.phone}\n- ID: ${dbData.id}\n- Payment Ref: ${formData.paymentRef}\n\nKind regards,\n${formData.name}`;
       
       const mailtoUrl = `mailto:info@successtheological.edu?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
       (window as any).lastMailtoUrl = mailtoUrl;
 
-      toast.success('Application submitted and sent to info@successtheological.edu');
+      toast.success('Application submitted successfully');
 
       // Construct WhatsApp Message
-      const whatsappMessage = `Hello *SUCCESS THEOLOGICAL SEMINARY AND COLLEGE Admissions*,\n\nI have just submitted my application.\n\n*Application Details:*\n- *ID:* ${appId}\n- *Name:* ${formData.name}\n- *Course:* ${selectedCourse?.title}\n- *Email:* ${formData.email}\n- *Phone:* ${formData.phone}\n\nPlease let me know the next steps. Thank you!`;
+      const whatsappMessage = `Hello *SUCCESS THEOLOGICAL SEMINARY AND COLLEGE Admissions*,\n\nI have just submitted my application.\n\n*Application Details:*\n- *ID:* ${dbData.id}\n- *Name:* ${formData.name}\n- *Course:* ${selectedCourse?.title}\n- *Email:* ${formData.email}\n- *Phone:* ${formData.phone}\n- *Payment Ref:* ${formData.paymentRef}\n\nPlease let me know the next steps. Thank you!`;
       
       const encodedMessage = encodeURIComponent(whatsappMessage);
       const whatsappUrl = `https://wa.me/233257077972?text=${encodedMessage}`;
       
-      // Store the URL to be used in the success screen
       (window as any).lastWhatsappUrl = whatsappUrl;
 
     } catch (error) {
@@ -261,7 +292,7 @@ export default function Apply() {
                 ))}
               </div>
               <p className="text-center text-muted-foreground">
-                Step {step} of 3
+                {step === 1 ? 'Personal Information' : step === 2 ? 'Course & Background' : 'Review & Payment'} — Step {step} of 3
               </p>
             </div>
           )}
@@ -447,10 +478,10 @@ export default function Apply() {
             </Card>
           )}
 
-          {/* Step 3: Review & Agreement */}
+          {/* Step 3: Review & Payment */}
           {step === 3 && (
             <Card className="card-spiritual p-10 border-t-4 border-l-4 border-b-8 border-r-8 border-t-accent border-l-accent/60 border-b-secondary border-r-secondary/70 shadow-[6px_8px_0px_0px_rgba(139,0,0,0.25),0_20px_40px_-10px_rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-[8px_10px_0px_0px_rgba(139,0,0,0.35),0_25px_50px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1">
-              <h2 className="text-2xl font-bold mb-6">Review & Agreement</h2>
+              <h2 className="text-2xl font-bold mb-6">Review & Payment</h2>
               <div className="space-y-6">
                 {/* Application Summary */}
                 <div className="bg-muted p-6 rounded-lg space-y-4">
@@ -472,6 +503,48 @@ export default function Apply() {
                       <p className="text-muted-foreground">Course</p>
                       <p className="font-semibold">{selectedCourse?.title}</p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Payment Section */}
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <Smartphone className="text-green-600" size={20} />
+                    Admission Form Payment
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    A non-refundable admission fee of <strong className="text-foreground">GHS {ADMISSION_FEE}.00</strong> is required to process your application.
+                  </p>
+                  <div className="bg-white rounded-lg p-4 border border-green-100 mb-4">
+                    <p className="text-sm font-semibold mb-2">Pay via MTN Mobile Money:</p>
+                    <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                      <li>Dial <strong className="text-foreground">*170#</strong> on your phone</li>
+                      <li>Select <strong>Send Money</strong> / <strong>Mobile Money</strong></li>
+                      <li>Enter this number: <strong className="text-lg text-green-700">{MOMO_NUMBER}</strong></li>
+                      <li>Enter amount: <strong>GHS {ADMISSION_FEE}.00</strong></li>
+                      <li>Enter your PIN to confirm</li>
+                      <li>You will receive an SMS with your <strong>transaction reference</strong></li>
+                    </ol>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-1">Account Name: {MOMO_NAME}</p>
+                  <div>
+                    <label htmlFor="paymentRef" className="block text-sm font-semibold mb-1">
+                      Transaction Reference *
+                    </label>
+                    <input
+                      id="paymentRef"
+                      type="text"
+                      name="paymentRef"
+                      value={formData.paymentRef}
+                      onChange={handleChange}
+                      placeholder="Enter the reference from your MoMo SMS"
+                      className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
+                        errors.paymentRef
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-border bg-input focus:border-accent focus:outline-none'
+                      }`}
+                    />
+                    {errors.paymentRef && <p className="text-red-500 text-sm mt-1">{errors.paymentRef}</p>}
                   </div>
                 </div>
 
@@ -513,7 +586,7 @@ export default function Apply() {
                     <div>
                       <p className="font-semibold">I agree to the Terms & Conditions</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I understand that my application will be reviewed and analyzed using AI assistance. My personal information will be kept confidential and used only for admissions purposes. I consent to receive communications about my application status.
+                        I understand that my application will be reviewed and analyzed using AI assistance. My personal information will be kept confidential and used only for admissions purposes. I confirm that I have paid the admission fee of GHS {ADMISSION_FEE}.00.
                       </p>
                     </div>
                   </label>

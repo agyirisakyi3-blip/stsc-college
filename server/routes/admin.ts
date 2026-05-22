@@ -1,25 +1,25 @@
 import { Router, Request, Response } from "express";
-import prisma from "../db.js";
+import { getDb } from "../db.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
-function requireDb(_req: Request, res: Response, next: Function) {
-  if (!prisma) return res.status(503).json({ error: "Database not available on this environment" });
-  next();
-}
-
-router.use(authenticate, requireAdmin, requireDb);
+router.use(authenticate, requireAdmin);
 
 router.get("/stats", async (_req: Request, res: Response) => {
   try {
+    const db = await getDb();
     const [users, programs, applications] = await Promise.all([
-      prisma.user.count(),
-      prisma.program.count(),
-      prisma.application.count(),
+      db.user.count(),
+      db.program.count(),
+      db.application.count(),
     ]);
-    const statusCounts = await prisma.application.groupBy({
+    const statusCounts = await db.application.groupBy({
       by: ["status"],
+      _count: true,
+    });
+    const paymentCounts = await db.application.groupBy({
+      by: ["paymentStatus"],
       _count: true,
     });
 
@@ -30,6 +30,9 @@ router.get("/stats", async (_req: Request, res: Response) => {
       applicationsByStatus: Object.fromEntries(
         statusCounts.map((s: any) => [s.status, s._count])
       ),
+      paymentsByStatus: Object.fromEntries(
+        paymentCounts.map((p: any) => [p.paymentStatus, p._count])
+      ),
     });
   } catch (error) {
     console.error("[admin] stats error:", error);
@@ -39,7 +42,8 @@ router.get("/stats", async (_req: Request, res: Response) => {
 
 router.get("/programs", async (_req: Request, res: Response) => {
   try {
-    const programs = await prisma.program.findMany({ orderBy: { createdAt: "desc" } });
+    const db = await getDb();
+    const programs = await db.program.findMany({ orderBy: { createdAt: "desc" } });
     res.json(programs);
   } catch (error) {
     console.error("[admin] programs error:", error);
@@ -49,8 +53,9 @@ router.get("/programs", async (_req: Request, res: Response) => {
 
 router.post("/programs", async (req: Request, res: Response) => {
   try {
+    const db = await getDb();
     const { title, summary, fullDescription, department, duration, prerequisites, thumbnail, instructor, capacity, startDate, schedule, outcomes } = req.body;
-    const program = await prisma.program.create({
+    const program = await db.program.create({
       data: {
         title, summary, fullDescription, department, duration,
         prerequisites: prerequisites || "None",
@@ -69,7 +74,8 @@ router.post("/programs", async (req: Request, res: Response) => {
 
 router.put("/programs/:id", async (req: Request, res: Response) => {
   try {
-    const program = await prisma.program.update({
+    const db = await getDb();
+    const program = await db.program.update({
       where: { id: req.params.id },
       data: req.body,
     });
@@ -82,7 +88,8 @@ router.put("/programs/:id", async (req: Request, res: Response) => {
 
 router.delete("/programs/:id", async (req: Request, res: Response) => {
   try {
-    await prisma.program.delete({ where: { id: req.params.id } });
+    const db = await getDb();
+    await db.program.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {
     console.error("[admin] delete program error:", error);
@@ -92,9 +99,10 @@ router.delete("/programs/:id", async (req: Request, res: Response) => {
 
 router.get("/applications", async (req: Request, res: Response) => {
   try {
+    const db = await getDb();
     const { status } = req.query;
     const where = status && status !== "ALL" ? { status: status as any } : {};
-    const applications = await prisma.application.findMany({
+    const applications = await db.application.findMany({
       where,
       include: { program: { select: { title: true } } },
       orderBy: { submittedAt: "desc" },
@@ -113,10 +121,22 @@ router.get("/applications", async (req: Request, res: Response) => {
 
 router.put("/applications/:id", async (req: Request, res: Response) => {
   try {
-    const { status, aiScore, aiSummary, aiConcerns, aiReply } = req.body;
-    const application = await prisma.application.update({
+    const db = await getDb();
+    const { status, aiScore, aiSummary, aiConcerns, aiReply, paymentStatus, paymentRef } = req.body;
+    const data: any = {};
+    if (status !== undefined) data.status = status;
+    if (aiScore !== undefined) data.aiScore = aiScore;
+    if (aiSummary !== undefined) data.aiSummary = aiSummary;
+    if (aiConcerns !== undefined) data.aiConcerns = aiConcerns;
+    if (aiReply !== undefined) data.aiReply = aiReply;
+    if (paymentStatus !== undefined) {
+      data.paymentStatus = paymentStatus;
+      if (paymentStatus === "VERIFIED") data.paidAt = new Date();
+    }
+    if (paymentRef !== undefined) data.paymentRef = paymentRef;
+    const application = await db.application.update({
       where: { id: req.params.id },
-      data: { status, aiScore, aiSummary, aiConcerns, aiReply },
+      data,
     });
     res.json(application);
   } catch (error) {
@@ -127,7 +147,8 @@ router.put("/applications/:id", async (req: Request, res: Response) => {
 
 router.delete("/applications/:id", async (req: Request, res: Response) => {
   try {
-    await prisma.application.delete({ where: { id: req.params.id } });
+    const db = await getDb();
+    await db.application.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {
     console.error("[admin] delete application error:", error);
@@ -137,7 +158,8 @@ router.delete("/applications/:id", async (req: Request, res: Response) => {
 
 router.get("/users", async (_req: Request, res: Response) => {
   try {
-    const users = await prisma.user.findMany({
+    const db = await getDb();
+    const users = await db.user.findMany({
       select: { id: true, name: true, email: true, role: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     });
@@ -150,10 +172,11 @@ router.get("/users", async (_req: Request, res: Response) => {
 
 router.post("/users", async (req: Request, res: Response) => {
   try {
+    const db = await getDb();
     const { name, email, password, role } = req.body;
     const { hashPassword } = await import("../auth.js");
     const hashed = await hashPassword(password);
-    const user = await prisma.user.create({
+    const user = await db.user.create({
       data: { name, email, password: hashed, role: role || "STUDENT" },
       select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
@@ -167,13 +190,14 @@ router.post("/users", async (req: Request, res: Response) => {
 
 router.put("/users/:id", async (req: Request, res: Response) => {
   try {
+    const db = await getDb();
     const { password, ...rest } = req.body;
     const data: any = { ...rest };
     if (password) {
       const { hashPassword } = await import("../auth.js");
       data.password = await hashPassword(password);
     }
-    const user = await prisma.user.update({
+    const user = await db.user.update({
       where: { id: req.params.id },
       data,
       select: { id: true, name: true, email: true, role: true, createdAt: true },
@@ -187,7 +211,8 @@ router.put("/users/:id", async (req: Request, res: Response) => {
 
 router.delete("/users/:id", async (req: Request, res: Response) => {
   try {
-    await prisma.user.delete({ where: { id: req.params.id } });
+    const db = await getDb();
+    await db.user.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {
     console.error("[admin] delete user error:", error);

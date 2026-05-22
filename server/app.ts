@@ -5,6 +5,7 @@ import { sendApplicationEmail, sendContactEmail } from "./email.js";
 import { appendApplication, ensureSheetSetup } from "./google-sheets.js";
 import authRouter from "./routes/auth.js";
 import adminRouter from "./routes/admin.js";
+import { getDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +29,36 @@ export function createApp() {
   // Admin routes (authenticated + admin-only)
   app.use("/api/admin", adminRouter);
 
-  // POST /api/apply — Submit application
+  // POST /api/applications — Submit application to DB
+  app.post("/api/applications", async (req, res) => {
+    try {
+      const { name, email, phone, courseTitle, bio, education, aiScore, aiSummary, aiConcerns, paymentRef } = req.body;
+      const db = await getDb();
+      const program = await db.program.findFirst({ where: { title: courseTitle } });
+      if (!program) {
+        return res.status(400).json({ success: false, error: "Program not found" });
+      }
+      const app = await db.application.create({
+        data: {
+          name, email, phone, bio, education,
+          aiScore: aiScore || null,
+          aiSummary: aiSummary || null,
+          aiConcerns: aiConcerns ? JSON.stringify(aiConcerns) : null,
+          paymentRef: paymentRef || null,
+          paymentAmount: 100,
+          paymentStatus: paymentRef ? "PAID" : "UNPAID",
+          paidAt: paymentRef ? new Date() : null,
+          programId: program.id,
+        },
+      });
+      res.status(201).json({ success: true, id: app.id });
+    } catch (error) {
+      console.error("[server] /api/applications error:", error);
+      res.status(500).json({ success: false, error: "Failed to submit application" });
+    }
+  });
+
+  // POST /api/apply — Legacy in-memory submission (kept for compatibility)
   app.post("/api/apply", async (req, res) => {
     try {
       const data = req.body;

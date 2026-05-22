@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Eye, Download, Trash2, CheckCircle, Clock } from "lucide-react";
+import { Eye, Download, Trash2, CheckCircle, Clock, Smartphone, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface Application {
@@ -20,6 +20,10 @@ interface Application {
   aiConcerns?: string;
   aiReply?: string;
   submittedAt: string;
+  paymentRef?: string;
+  paymentStatus?: string;
+  paymentAmount?: number;
+  paidAt?: string;
 }
 
 const STATUSES = ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"];
@@ -97,6 +101,7 @@ export default function Applications() {
                 <th className="text-left py-3 px-4 font-semibold text-sm">Course</th>
                 <th className="text-left py-3 px-4 font-semibold text-sm">Status</th>
                 <th className="text-left py-3 px-4 font-semibold text-sm">Score</th>
+                <th className="text-left py-3 px-4 font-semibold text-sm">Payment</th>
                 <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm">Actions</th>
               </tr>
@@ -112,6 +117,16 @@ export default function Applications() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-sm">{a.aiScore != null ? `${a.aiScore}%` : "-"}</td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      a.paymentStatus === "VERIFIED" ? "bg-green-100 text-green-700" :
+                      a.paymentStatus === "PAID" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-gray-100 text-gray-500"
+                    }`}>
+                      <Smartphone size={10} />
+                      {a.paymentStatus === "VERIFIED" ? "Verified" : a.paymentStatus === "PAID" ? "Paid" : "Unpaid"}
+                    </span>
+                  </td>
                   <td className="py-3 px-4 text-sm text-muted-foreground">{new Date(a.submittedAt).toLocaleDateString()}</td>
                   <td className="py-3 px-4 text-right">
                     <button onClick={() => setSelected(a)} className="text-accent hover:text-accent/80" title="View">
@@ -162,6 +177,36 @@ export default function Applications() {
                     ))}
                   </div>
                 </div>
+
+                {selected.paymentRef && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-1">
+                      <Smartphone size={14} className="text-green-600" /> Payment
+                    </h3>
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Ref:</span> {selected.paymentRef}</p>
+                      <p><span className="text-muted-foreground">Amount:</span> GHS {selected.paymentAmount || 50}.00</p>
+                      <p><span className="text-muted-foreground">Status:</span> {selected.paymentStatus}</p>
+                      {selected.paidAt && <p><span className="text-muted-foreground">Verified:</span> {new Date(selected.paidAt).toLocaleDateString()}</p>}
+                    </div>
+                    {selected.paymentStatus !== "VERIFIED" && (
+                      <Button size="sm" onClick={async () => {
+                        try {
+                          await fetch(`/api/admin/applications/${selected.id}`, {
+                            method: "PUT",
+                            headers,
+                            body: JSON.stringify({ paymentStatus: "VERIFIED" }),
+                          });
+                          toast.success("Payment verified");
+                          load();
+                          setSelected(null);
+                        } catch { toast.error("Failed to verify payment"); }
+                      }} className="mt-3 bg-green-600 hover:bg-green-700 text-white text-xs">
+                        <ShieldCheck size={12} className="mr-1" /> Verify Payment
+                      </Button>
+                    )}
+                  </div>
+                )}
 
                 {selected.aiSummary && (
                   <div className="bg-accent/5 border border-accent/20 rounded-lg p-4">

@@ -1,4 +1,4 @@
-import prisma from "./db.js";
+import { getDb } from "./db.js";
 import { hashPassword } from "./auth.js";
 import { readFileSync } from "fs";
 import { dirname, resolve } from "path";
@@ -7,10 +7,11 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function seed() {
-  const existingAdmin = await prisma.user.findUnique({ where: { email: "admin@stsc.edu" } });
+  const db = await getDb();
+  const existingAdmin = await db.user.findUnique({ where: { email: "admin@stsc.edu" } });
   if (!existingAdmin) {
     const hashed = await hashPassword("admin123");
-    await prisma.user.create({
+    await db.user.create({
       data: { name: "Admin", email: "admin@stsc.edu", password: hashed, role: "ADMIN" },
     });
     console.log("✅ Admin user created (admin@stsc.edu / admin123)");
@@ -18,13 +19,13 @@ async function seed() {
     console.log("ℹ️ Admin user already exists");
   }
 
-  const existingPrograms = await prisma.program.count();
+  const existingPrograms = await db.program.count();
   if (existingPrograms === 0) {
     const coursesPath = resolve(__dirname, "..", "client", "src", "data", "courses.json");
     const courses = JSON.parse(readFileSync(coursesPath, "utf-8"));
 
     for (const c of courses) {
-      await prisma.program.create({
+      await db.program.create({
         data: {
           title: c.title,
           summary: c.summary,
@@ -47,7 +48,7 @@ async function seed() {
     console.log(`ℹ️ ${existingPrograms} programs already exist, skipping seed`);
   }
 
-  await prisma.$disconnect();
+  await db.$disconnect();
 }
 
 seed().catch((e) => {
