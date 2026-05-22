@@ -112,3 +112,11 @@ temp/
 client/public/__manus__/version.json
 
 .vercel
+
+/generated/prisma
+
+# Database
+dev.db
+prisma/dev.db
+uploads/
+*.db-journal
