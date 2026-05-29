@@ -90,7 +90,7 @@ const departments = [
   },
   {
     id: 'business-school',
-    label: 'Knutsford Business School',
+    label: 'STSC Business School',
     icon: Briefcase,
     description: 'Excellence in business education, equipping students with entrepreneurial, financial, and managerial skills for global impact.',
     color: 'from-accent to-blue-800',
@@ -197,7 +197,7 @@ export default function Courses() {
                     : 'bg-background text-foreground border border-border hover:border-accent'
                 }`}
               >
-                {dept.label === 'Department of music (DAVIDIC COLLEGE OF MUSIC)' ? 'Music' : dept.label.replace('Department of ', '').replace('Faculty of ', '').replace('Knutsford ', '')}
+                {dept.label === 'Department of music (DAVIDIC COLLEGE OF MUSIC)' ? 'Music' : dept.label.replace('Department of ', '').replace('Faculty of ', '')}
               </button>
             ))}
           </div>
