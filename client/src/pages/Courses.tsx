@@ -42,6 +42,33 @@ interface Course {
 
 const departments = [
   {
+    id: 'business-school',
+    label: 'STSC Business School',
+    icon: Briefcase,
+    description: 'Excellence in business education, equipping students with entrepreneurial, financial, and managerial skills for global impact.',
+    color: 'from-accent to-blue-800',
+    summary: '3 Programs',
+    image: '/images/leadership.jpeg',
+  },
+  {
+    id: 'arts-humanities',
+    label: 'Faculty of Arts, Humanities and Social Sciences',
+    icon: Palette,
+    description: 'Exploring human culture, expression, and society through communication, media, and the humanities.',
+    color: 'from-secondary to-red-800',
+    summary: '3 Programs',
+    image: '/images/Campus.jpeg',
+  },
+  {
+    id: 'science-technology',
+    label: 'Faculty of Science, Technology and Applied Sciences',
+    icon: Cpu,
+    description: 'Advancing knowledge in computing, information systems, and technological innovation for real-world impact.',
+    color: 'from-accent to-indigo-800',
+    summary: '3 Programs',
+    image: '/images/Campus.jpeg',
+  },
+  {
     id: 'theology',
     label: 'Department of theology',
     icon: BookMarked,
@@ -103,33 +130,6 @@ const departments = [
     color: 'from-accent to-indigo-800',
     summary: '6 Programs',
     image: '/images/Mission.jpeg',
-  },
-  {
-    id: 'business-school',
-    label: 'STSC Business School',
-    icon: Briefcase,
-    description: 'Excellence in business education, equipping students with entrepreneurial, financial, and managerial skills for global impact.',
-    color: 'from-accent to-blue-800',
-    summary: '3 Programs',
-    image: '/images/leadership.jpeg',
-  },
-  {
-    id: 'arts-humanities',
-    label: 'Faculty of Arts, Humanities and Social Sciences',
-    icon: Palette,
-    description: 'Exploring human culture, expression, and society through communication, media, and the humanities.',
-    color: 'from-secondary to-red-800',
-    summary: '3 Programs',
-    image: '/images/Campus.jpeg',
-  },
-  {
-    id: 'science-technology',
-    label: 'Faculty of Science, Technology and Applied Sciences',
-    icon: Cpu,
-    description: 'Advancing knowledge in computing, information systems, and technological innovation for real-world impact.',
-    color: 'from-accent to-indigo-800',
-    summary: '3 Programs',
-    image: '/images/Campus.jpeg',
   },
 ];
 
