@@ -163,6 +163,12 @@
   }
 }
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @layer components {
   .container {
     width: 100%;
@@ -192,7 +198,7 @@
     }
   }
   
-  /* Spiritual Minimalism Components */
+  /* STSC Design System Components */
   
   .btn-primary {
     @apply px-6 py-3 bg-accent text-accent-foreground rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95;
@@ -206,6 +212,10 @@
     @apply px-6 py-3 border-2 border-accent text-accent rounded-lg font-semibold transition-all duration-300 hover:bg-accent hover:text-accent-foreground active:scale-95;
   }
   
+  .btn-gold {
+    @apply px-6 py-3 bg-ring text-accent font-semibold rounded-lg transition-all duration-300 hover:shadow-lg hover:brightness-110 active:scale-95;
+  }
+  
   .card-spiritual {
     @apply bg-card text-card-foreground rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-border;
   }
@@ -214,16 +224,24 @@
     @apply border-accent/50;
   }
   
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-xl;
+  }
+  
   .hero-section {
-    @apply relative min-h-screen flex items-center justify-center overflow-hidden;
+    @apply relative min-h-[85vh] flex items-center justify-center overflow-hidden;
   }
   
   .hero-content {
-    @apply relative z-10 text-center max-w-3xl mx-auto px-4;
+    @apply relative z-10 text-center max-w-4xl mx-auto px-4;
   }
   
   .section-divider {
     @apply h-1 w-24 bg-accent mx-auto my-8 rounded-full;
+  }
+  
+  .section-divider-gold {
+    @apply h-1 w-16 bg-ring mx-auto rounded-full;
   }
   
   .gradient-text {
@@ -268,6 +286,17 @@
     }
     50% {
       transform: translateY(-10px);
+    }
+  }
+  
+  @keyframes countUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }
