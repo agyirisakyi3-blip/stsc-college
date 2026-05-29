@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Clock, Users, BookOpen, ArrowRight, GraduationCap, BookMarked, Star, Heart, Globe, MapPin, Monitor, Calendar } from 'lucide-react';
+import { Clock, Users, BookOpen, ArrowRight, GraduationCap, BookMarked, Star, Heart, Globe, MapPin, Monitor, Calendar, Briefcase, Palette, Cpu } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import coursesData from '@/data/courses.json';
@@ -88,6 +88,33 @@ const departments = [
     summary: '6 Programs',
     image: '/images/Mission.jpeg',
   },
+  {
+    id: 'business-school',
+    label: 'Knutsford Business School',
+    icon: Briefcase,
+    description: 'Excellence in business education, equipping students with entrepreneurial, financial, and managerial skills for global impact.',
+    color: 'from-accent to-blue-800',
+    summary: '3 Programs',
+    image: '/images/leadership.jpeg',
+  },
+  {
+    id: 'arts-humanities',
+    label: 'Faculty of Arts, Humanities and Social Sciences',
+    icon: Palette,
+    description: 'Exploring human culture, expression, and society through communication, media, and the humanities.',
+    color: 'from-secondary to-red-800',
+    summary: '3 Programs',
+    image: '/images/Campus.jpeg',
+  },
+  {
+    id: 'science-technology',
+    label: 'Faculty of Science, Technology and Applied Sciences',
+    icon: Cpu,
+    description: 'Advancing knowledge in computing, information systems, and technological innovation for real-world impact.',
+    color: 'from-accent to-indigo-800',
+    summary: '3 Programs',
+    image: '/images/Campus.jpeg',
+  },
 ];
 
 export default function Courses() {
@@ -138,8 +165,8 @@ export default function Courses() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: '7', label: 'Academic Departments', icon: BookMarked },
-              { value: '42', label: 'Programs Offered', icon: BookOpen },
+              { value: '10', label: 'Academic Departments', icon: BookMarked },
+              { value: '51', label: 'Programs Offered', icon: BookOpen },
               { value: '6', label: 'Study Levels', icon: GraduationCap },
               { value: '3', label: 'Learning Formats', icon: Monitor },
             ].map((stat, i) => {
@@ -170,7 +197,7 @@ export default function Courses() {
                     : 'bg-background text-foreground border border-border hover:border-accent'
                 }`}
               >
-                {dept.label === 'Department of music (DAVIDIC COLLEGE OF MUSIC)' ? 'Music' : dept.label.replace('Department of ', '')}
+                {dept.label === 'Department of music (DAVIDIC COLLEGE OF MUSIC)' ? 'Music' : dept.label.replace('Department of ', '').replace('Faculty of ', '').replace('Knutsford ', '')}
               </button>
             ))}
           </div>
