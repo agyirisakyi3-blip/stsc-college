@@ -1,12 +1,28 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { motion } from 'framer-motion';
 import { Clock, Users, BookOpen, ArrowRight, GraduationCap, BookMarked, Star, Heart, Globe, MapPin, Monitor, Calendar, Briefcase, Palette, Cpu } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import coursesData from '@/data/courses.json';
 import { useSEO, SEO } from '@/hooks/useSEO';
 import { Link } from 'wouter';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: 'easeOut' as const } },
+};
 
 interface Course {
   id: string;
@@ -149,21 +165,46 @@ export default function Courses() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-accent/90 via-accent/70 to-secondary/60"></div>
         <div className="relative z-10 container text-center px-4 py-20">
-          <div className="inline-flex items-center gap-2 bg-ring/20 backdrop-blur-sm text-ring px-4 py-2 rounded-full text-sm font-medium mb-6 fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="inline-flex items-center gap-2 bg-ring/20 backdrop-blur-sm text-ring px-4 py-2 rounded-full text-sm font-medium mb-6"
+          >
             <GraduationCap size={16} />
             Academic Programs
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 fade-in">Our Schools & Programs</h1>
-          <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto fade-in" style={{ animationDelay: '0.1s' }}>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4"
+          >Our Schools & Programs</motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
+            className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto"
+          >
             Explore our carefully designed departments offering comprehensive theological education for spiritual leaders.
-          </p>
+          </motion.p>
         </div>
       </section>
 
       {/* Quick Stats */}
-      <section className="py-10 bg-accent text-accent-foreground">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <section className="py-10 bg-accent text-accent-foreground relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-ring rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-ring rounded-full blur-3xl"></div>
+        </div>
+        <div className="container relative z-10">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid grid-cols-2 md:grid-cols-4 gap-6"
+          >
             {[
               { value: '10', label: 'Academic Departments', icon: BookMarked },
               { value: '51', label: 'Programs Offered', icon: BookOpen },
@@ -172,14 +213,14 @@ export default function Courses() {
             ].map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <div key={i} className="text-center flex flex-col items-center gap-2">
+                <motion.div key={i} variants={cardItem} className="text-center flex flex-col items-center gap-2">
                   <Icon size={24} className="text-ring" />
                   <div className="text-3xl font-bold text-ring">{stat.value}</div>
                   <p className="text-xs text-white/70 uppercase tracking-wider">{stat.label}</p>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -211,18 +252,30 @@ export default function Courses() {
         if (deptCourses.length === 0) return null;
 
         return (
-          <section
+          <motion.section
             key={dept.id}
             id={`dept-${dept.label.replace(/\s+/g, '-').toLowerCase()}`}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={fadeUp}
             className={`py-16 ${deptIdx % 2 === 0 ? 'bg-background' : 'bg-muted'}`}
           >
             <div className="container">
-              {/* Department Header */}
               <div className="flex flex-col lg:flex-row gap-8 mb-12">
-                <div className="lg:w-1/3">
-                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${dept.color} flex items-center justify-center mb-4 shadow-lg`}>
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="lg:w-1/3"
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.05, rotate: 3 }}
+                    className={`w-16 h-16 rounded-xl bg-gradient-to-br ${dept.color} flex items-center justify-center mb-4 shadow-lg`}
+                  >
                     <Icon className="w-8 h-8 text-white" />
-                  </div>
+                  </motion.div>
                   <h2 className="text-2xl md:text-3xl font-bold mb-3">{dept.label.replace('Department of ', '')}</h2>
                   <div className="w-12 h-1 bg-ring mb-4"></div>
                   <p className="text-muted-foreground leading-relaxed mb-4">{dept.description}</p>
@@ -230,37 +283,50 @@ export default function Courses() {
                     <GraduationCap size={16} />
                     {deptCourses.length} Programs Available
                   </div>
-                </div>
-                <div className="lg:w-2/3">
+                </motion.div>
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={stagger}
+                  className="lg:w-2/3"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {deptCourses.map((course) => (
-                      <Card
-                        key={course.id}
-                        className="card-spiritual p-5 card-hover cursor-pointer"
-                        onClick={() => setSelectedCourse(course)}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-bold text-sm leading-tight flex-1">{course.title}</h3>
-                          <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-semibold rounded-full whitespace-nowrap ml-2">
-                            {course.duration}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{course.summary}</p>
-                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                          <span className="flex items-center gap-1"><Clock size={12} />{course.schedule}</span>
-                        </div>
-                      </Card>
+                      <motion.div key={course.id} variants={cardItem} whileHover={{ y: -4, transition: { duration: 0.3 } }}>
+                        <Card
+                          className="card-spiritual p-5 cursor-pointer"
+                          onClick={() => setSelectedCourse(course)}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-bold text-sm leading-tight flex-1">{course.title}</h3>
+                            <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-semibold rounded-full whitespace-nowrap ml-2">
+                              {course.duration}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{course.summary}</p>
+                          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><Clock size={12} />{course.schedule}</span>
+                          </div>
+                        </Card>
+                      </motion.div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               </div>
             </div>
-          </section>
+          </motion.section>
         );
       })}
 
       {/* Study Options Section */}
-      <section className="py-20 bg-accent text-accent-foreground">
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeUp}
+        className="py-20 bg-accent text-accent-foreground"
+      >
         <div className="container">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 text-ring text-sm font-semibold mb-3 uppercase tracking-wider">
@@ -272,7 +338,13 @@ export default function Courses() {
               Choose the study format that works best for your schedule and ministry commitments.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {[
               {
                 title: 'Full-Time Regular',
@@ -295,29 +367,40 @@ export default function Courses() {
             ].map((option, i) => {
               const OptionIcon = option.icon;
               return (
-                <Card key={i} className="bg-white/10 border-white/10 backdrop-blur-sm p-8 card-hover">
-                  <div className="w-14 h-14 rounded-xl bg-ring/20 flex items-center justify-center mb-5">
-                    <OptionIcon className="w-7 h-7 text-ring" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{option.title}</h3>
-                  <p className="text-white/70 text-sm leading-relaxed mb-5">{option.desc}</p>
-                  <ul className="space-y-2">
-                    {option.features.map((f, j) => (
-                      <li key={j} className="flex items-center gap-2 text-sm text-white/60">
-                        <span className="w-1.5 h-1.5 bg-ring rounded-full"></span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
+                <motion.div key={i} variants={cardItem}>
+                  <Card className="bg-white/10 border-white/10 backdrop-blur-sm p-8 card-hover">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className="w-14 h-14 rounded-xl bg-ring/20 flex items-center justify-center mb-5"
+                    >
+                      <OptionIcon className="w-7 h-7 text-ring" />
+                    </motion.div>
+                    <h3 className="text-xl font-bold text-white mb-3">{option.title}</h3>
+                    <p className="text-white/70 text-sm leading-relaxed mb-5">{option.desc}</p>
+                    <ul className="space-y-2">
+                      {option.features.map((f, j) => (
+                        <li key={j} className="flex items-center gap-2 text-sm text-white/60">
+                          <span className="w-1.5 h-1.5 bg-ring rounded-full"></span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* How to Choose Section */}
-      <section className="py-20 bg-background">
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeUp}
+        className="py-20 bg-background"
+      >
         <div className="container">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-14">
@@ -330,7 +413,13 @@ export default function Courses() {
                 Follow these steps to select the program that aligns with your calling and goals.
               </p>
             </div>
-            <div className="space-y-6">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={stagger}
+              className="space-y-6"
+            >
               {[
                 {
                   step: '01',
@@ -358,36 +447,74 @@ export default function Courses() {
                   desc: 'Submit your application and take the first step toward transforming your ministry.',
                 },
               ].map((item, i) => (
-                <div key={i} className="flex gap-5 items-start group">
+                <motion.div key={i} variants={cardItem} className="flex gap-5 items-start group">
                   <div className="text-3xl font-bold text-accent/20 group-hover:text-accent/40 transition-colors min-w-[48px]">{item.step}</div>
                   <div>
                     <h3 className="font-bold text-lg mb-1">{item.title}</h3>
                     <p className="text-muted-foreground">{item.desc}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-accent to-secondary relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeUp}
+        className="py-20 bg-gradient-to-r from-accent to-secondary relative overflow-hidden"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 0.1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.5 }}
+          className="absolute inset-0"
+        >
           <div className="absolute top-20 right-20 w-72 h-72 border-2 border-white rounded-full"></div>
           <div className="absolute -bottom-10 -left-10 w-48 h-48 border-2 border-white rounded-full"></div>
-        </div>
+        </motion.div>
         <div className="container text-center relative z-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Enroll?</h2>
-          <div className="w-16 h-1 bg-ring mx-auto mb-6"></div>
-          <p className="text-lg text-white/80 mb-10 max-w-xl mx-auto">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-3xl md:text-4xl font-bold text-white mb-4"
+          >Ready to Enroll?</motion.h2>
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="w-16 h-1 bg-ring mx-auto mb-6"
+          ></motion.div>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="text-lg text-white/80 mb-10 max-w-xl mx-auto"
+          >
             Take the next step in your spiritual journey. Apply now and begin your transformative education.
-          </p>
-          <Link href="/apply" className="btn-gold text-lg px-10 py-5 inline-flex items-center gap-2">
-            Apply Now <ArrowRight size={22} />
-          </Link>
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <Link href="/apply" className="btn-gold text-lg px-10 py-5 inline-flex items-center gap-2">
+              Apply Now <ArrowRight size={22} />
+            </Link>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Course Detail Modal */}
       <Dialog open={!!selectedCourse} onOpenChange={() => setSelectedCourse(null)}>

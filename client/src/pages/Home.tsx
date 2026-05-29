@@ -1,10 +1,36 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { Card } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Users, Award, ArrowRight, GraduationCap, BookMarked, Heart, Quote, ChevronLeft, ChevronRight, Star, MapPin, Calendar, Clock } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { useSEO, SEO } from '@/hooks/useSEO';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: 'easeOut' as const } },
+};
+
+const slideLeft = {
+  hidden: { opacity: 0, x: -50 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
+
+const slideRight = {
+  hidden: { opacity: 0, x: 50 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
 
 export default function Home() {
   useSEO(SEO.home);
@@ -79,7 +105,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => {
       setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
-    }, 6000);
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 
@@ -184,7 +210,6 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="hero-section relative" style={{ minHeight: '85vh' }}>
-        {/* Background Images */}
         {heroImages.map((img, i) => (
           <div
             key={i}
@@ -195,69 +220,115 @@ export default function Home() {
             }}
           />
         ))}
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-accent/90 via-accent/70 to-secondary/60"></div>
 
         <div className="relative z-10 container text-center px-4 py-24">
           <div className="max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-ring/20 backdrop-blur-sm text-ring px-4 py-2 rounded-full text-sm font-medium mb-6 fade-in">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center gap-2 bg-ring/20 backdrop-blur-sm text-ring px-4 py-2 rounded-full text-sm font-medium mb-6"
+            >
               <GraduationCap size={16} />
               Welcome to STSC
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight fade-in" style={{ animationDelay: '0.1s' }}>
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
+            >
               Raising{' '}
               <span className="text-ring">Spotless Leaders</span>
               {' '}for Global Impact
-            </h1>
-            <p className="text-lg md:text-xl text-white/80 mb-10 max-w-3xl mx-auto leading-relaxed fade-in" style={{ animationDelay: '0.2s' }}>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.6 }}
+              className="text-lg md:text-xl text-white/80 mb-10 max-w-3xl mx-auto leading-relaxed"
+            >
               Born out of passion to raise unquestionable leaders that can move beyond their jurisdiction
               to impact their generation for God and community.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center fade-in" style={{ animationDelay: '0.3s' }}>
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.8 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
               <Link href="/courses" className="btn-gold text-base px-8 py-4 inline-flex items-center justify-center gap-2">
                 Explore Courses <ArrowRight size={20} />
               </Link>
               <Link href="/about" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white/40 text-white rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 text-base">
                 Learn More
               </Link>
-            </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/40 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <div className="w-6 h-10 border-2 border-white/40 rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
+            </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Stats Section */}
-      <section ref={statsRef} className="py-16 bg-accent text-accent-foreground">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section ref={statsRef} className="py-16 bg-accent text-accent-foreground relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-ring rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-ring rounded-full blur-3xl"></div>
+        </div>
+        <div className="container relative z-10">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8"
+          >
             {[
               { value: Math.round(counts.years), label: 'Years of Excellence', suffix: '+' },
               { value: Math.round(counts.programs), label: 'Programs Offered', suffix: '+' },
               { value: Math.round(counts.students / 100) * 100, label: 'Students Enrolled', suffix: '+' },
               { value: Math.round(counts.graduates / 100) * 100, label: 'Graduates', suffix: '+' },
             ].map((stat, i) => (
-              <div key={i} className="text-center">
+              <motion.div key={i} variants={cardItem} className="text-center">
                 <div className="text-4xl md:text-5xl font-bold text-ring mb-2">
                   {stat.value.toLocaleString()}{stat.suffix}
                 </div>
                 <p className="text-sm text-white/70 uppercase tracking-wider">{stat.label}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Welcome Section */}
-      <section className="py-20 bg-background">
-        <div className="container">
+      <section className="py-20 bg-background relative overflow-hidden">
+        <div className="absolute top-40 -left-20 w-72 h-72 bg-accent/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 -right-20 w-96 h-96 bg-ring/5 rounded-full blur-3xl"></div>
+        <div className="container relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="relative">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              variants={slideLeft}
+              className="relative"
+            >
               <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl">
                 <img
                   src="/images/Apostle Dr Asravor Dzigbordi Aku Selasi Success.jpeg"
@@ -265,11 +336,27 @@ export default function Home() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              {/* Decorative element */}
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-ring/20 rounded-2xl -z-10"></div>
-              <div className="absolute -top-4 -left-4 w-24 h-24 bg-accent/10 rounded-2xl -z-10"></div>
-            </div>
-            <div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+                className="absolute -bottom-4 -right-4 w-32 h-32 bg-ring/20 rounded-2xl -z-10"
+              ></motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
+                className="absolute -top-4 -left-4 w-24 h-24 bg-accent/10 rounded-2xl -z-10"
+              ></motion.div>
+            </motion.div>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              variants={slideRight}
+            >
               <div className="inline-flex items-center gap-2 text-accent text-sm font-semibold mb-4 uppercase tracking-wider">
                 <span className="w-8 h-0.5 bg-accent"></span>
                 Welcome to STSC
@@ -290,38 +377,48 @@ export default function Home() {
                 depth needed to serve effectively in various ministry contexts. With campuses across
                 Ghana, we bring quality theological education within reach of every called servant of God.
               </p>
-              <div className="flex flex-wrap gap-6 mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <MapPin size={18} className="text-accent" />
-                  </div>
-                  <span className="text-sm font-medium">5 Campuses Nationwide</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <Calendar size={18} className="text-accent" />
-                  </div>
-                  <span className="text-sm font-medium">Est. 2005</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <Clock size={18} className="text-accent" />
-                  </div>
-                  <span className="text-sm font-medium">Flexible Learning</span>
-                </div>
-              </div>
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={stagger}
+                className="flex flex-wrap gap-6 mb-8"
+              >
+                {[
+                  { icon: MapPin, text: '5 Campuses Nationwide' },
+                  { icon: Calendar, text: 'Est. 2005' },
+                  { icon: Clock, text: 'Flexible Learning' },
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <motion.div key={i} variants={cardItem} className="flex items-center gap-2">
+                      <div className="p-2 bg-accent/10 rounded-lg">
+                        <Icon size={18} className="text-accent" />
+                      </div>
+                      <span className="text-sm font-medium">{item.text}</span>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
               <Link href="/about" className="btn-primary inline-flex items-center gap-2">
                 Read More About Us <ArrowRight size={18} />
               </Link>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Departments / Schools Section */}
-      <section className="py-20 bg-muted">
-        <div className="container">
-          <div className="text-center mb-14">
+      <section className="py-20 bg-muted relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl"></div>
+        <div className="container relative z-10">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-center mb-14"
+          >
             <div className="inline-flex items-center gap-2 text-accent text-sm font-semibold mb-3 uppercase tracking-wider">
               <span className="w-8 h-0.5 bg-accent"></span>
               Our Schools
@@ -330,42 +427,64 @@ export default function Home() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Choose from our carefully designed departments that guide you through biblical knowledge and spiritual development.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={stagger}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {departments.map((dept, index) => {
               const Icon = dept.icon;
               return (
-                <Link key={index} href="/courses" className="group block">
-                  <Card className="card-spiritual p-8 card-hover h-full relative overflow-hidden">
-                    {/* Top gradient bar */}
-                    <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${dept.color}`}></div>
-                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${dept.color} flex items-center justify-center mb-5 shadow-lg`}>
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">{dept.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{dept.description}</p>
-                    <div className="mt-5 flex items-center text-accent text-sm font-semibold group-hover:gap-3 transition-all gap-2">
-                      View Programs <ArrowRight size={16} />
-                    </div>
-                  </Card>
-                </Link>
+                <motion.div key={index} variants={cardItem} whileHover={{ y: -8, transition: { duration: 0.3 } }}>
+                  <Link href="/courses" className="group block">
+                    <Card className="card-spiritual p-8 h-full relative overflow-hidden">
+                      <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${dept.color}`}></div>
+                      <motion.div
+                        whileHover={{ scale: 1.05, rotate: 3 }}
+                        className={`w-14 h-14 rounded-xl bg-gradient-to-br ${dept.color} flex items-center justify-center mb-5 shadow-lg`}
+                      >
+                        <Icon className="w-7 h-7 text-white" />
+                      </motion.div>
+                      <h3 className="text-xl font-bold mb-3">{dept.title}</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{dept.description}</p>
+                      <div className="mt-5 flex items-center text-accent text-sm font-semibold gap-2">
+                        View Programs <ArrowRight size={16} />
+                      </div>
+                    </Card>
+                  </Link>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
 
-          <div className="text-center mt-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.6 }}
+            className="text-center mt-12"
+          >
             <Link href="/courses" className="btn-primary inline-flex items-center gap-2">
               View All Programs <ArrowRight size={18} />
             </Link>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Why Choose Us Section */}
       <section className="py-20 bg-background">
         <div className="container">
-          <div className="text-center mb-14">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-center mb-14"
+          >
             <div className="inline-flex items-center gap-2 text-accent text-sm font-semibold mb-3 uppercase tracking-wider">
               <span className="w-8 h-0.5 bg-accent"></span>
               Why STSC
@@ -374,29 +493,48 @@ export default function Home() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Discover what makes Success Theological Seminary and College the preferred choice for theological education.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={stagger}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {values.map((value, index) => {
               const Icon = value.icon;
               return (
-                <Card key={index} className="card-spiritual text-center p-10 card-hover relative">
-                  <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-6">
-                    <Icon className="w-8 h-8 text-accent" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">{value.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{value.description}</p>
-                </Card>
+                <motion.div key={index} variants={cardItem} whileHover={{ y: -6, transition: { duration: 0.3 } }}>
+                  <Card className="card-spiritual text-center p-10 relative">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                      className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-6"
+                    >
+                      <Icon className="w-8 h-8 text-accent" />
+                    </motion.div>
+                    <h3 className="text-xl font-bold mb-3">{value.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{value.description}</p>
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-muted">
-        <div className="container">
-          <div className="text-center mb-14">
+      <section className="py-20 bg-muted relative overflow-hidden">
+        <div className="absolute top-20 left-20 w-48 h-48 bg-ring/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-accent/5 rounded-full blur-3xl"></div>
+        <div className="container relative z-10">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-center mb-14"
+          >
             <div className="inline-flex items-center gap-2 text-accent text-sm font-semibold mb-3 uppercase tracking-wider">
               <span className="w-8 h-0.5 bg-accent"></span>
               Testimonials
@@ -405,7 +543,7 @@ export default function Home() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Hear from our students and alumni about their experience at STSC.
             </p>
-          </div>
+          </motion.div>
 
           <div className="max-w-3xl mx-auto relative">
             <Card className="card-spiritual p-10 md:p-14 text-center relative">
@@ -415,39 +553,53 @@ export default function Home() {
                   <Star key={i} size={18} className="inline-block text-ring fill-ring" />
                 ))}
               </div>
-              <blockquote className="text-lg md:text-xl text-foreground/90 leading-relaxed mb-8 font-serif italic">
-                "{testimonials[testimonialIndex].text}"
-              </blockquote>
-              <div className="w-12 h-0.5 bg-ring mx-auto mb-4"></div>
-              <p className="font-bold text-lg">{testimonials[testimonialIndex].author}</p>
-              <p className="text-sm text-muted-foreground">{testimonials[testimonialIndex].role}</p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={testimonialIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <blockquote className="text-lg md:text-xl text-foreground/90 leading-relaxed mb-8 font-serif italic">
+                    "{testimonials[testimonialIndex].text}"
+                  </blockquote>
+                  <div className="w-12 h-0.5 bg-ring mx-auto mb-4"></div>
+                  <p className="font-bold text-lg">{testimonials[testimonialIndex].author}</p>
+                  <p className="text-sm text-muted-foreground">{testimonials[testimonialIndex].role}</p>
+                </motion.div>
+              </AnimatePresence>
             </Card>
 
-            {/* Navigation Arrows */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setTestimonialIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
               className="absolute top-1/2 -left-4 md:-left-6 -translate-y-1/2 p-2 bg-card border border-border rounded-full shadow-md hover:bg-muted transition-colors"
               aria-label="Previous testimonial"
             >
               <ChevronLeft size={20} />
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setTestimonialIndex((prev) => (prev + 1) % testimonials.length)}
               className="absolute top-1/2 -right-4 md:-right-6 -translate-y-1/2 p-2 bg-card border border-border rounded-full shadow-md hover:bg-muted transition-colors"
               aria-label="Next testimonial"
             >
               <ChevronRight size={20} />
-            </button>
+            </motion.button>
 
-            {/* Dots */}
             <div className="flex justify-center gap-2 mt-6">
               {testimonials.map((_, i) => (
-                <button
+                <motion.button
                   key={i}
+                  whileHover={{ scale: 1.3 }}
                   onClick={() => setTestimonialIndex(i)}
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                  className={`rounded-full transition-all duration-300 ${
                     i === testimonialIndex ? 'bg-accent w-6' : 'bg-muted-foreground/30'
                   }`}
+                  style={{ height: '10px' }}
                   aria-label={`Go to testimonial ${i + 1}`}
                 />
               ))}
@@ -459,7 +611,13 @@ export default function Home() {
       {/* News & Updates Section */}
       <section className="py-20 bg-background">
         <div className="container">
-          <div className="text-center mb-14">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-center mb-14"
+          >
             <div className="inline-flex items-center gap-2 text-accent text-sm font-semibold mb-3 uppercase tracking-wider">
               <span className="w-8 h-0.5 bg-accent"></span>
               News & Updates
@@ -468,47 +626,92 @@ export default function Home() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Stay updated with the latest news, events, and announcements from our institution.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={stagger}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {news.map((item, index) => (
-              <Card key={index} className="card-spiritual card-hover overflow-hidden p-0">
-                <div className="h-2 bg-gradient-to-r from-accent to-secondary"></div>
-                <div className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full">
-                      {item.category}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{item.date}</span>
+              <motion.div key={index} variants={cardItem} whileHover={{ y: -6, transition: { duration: 0.3 } }}>
+                <Card className="card-spiritual overflow-hidden p-0 h-full">
+                  <div className="h-2 bg-gradient-to-r from-accent to-secondary"></div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full">
+                        {item.category}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{item.date}</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2 leading-tight">{item.title}</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed mb-4">{item.description}</p>
+                    <a href="#" className="text-accent font-semibold text-sm hover:text-accent/80 transition-colors inline-flex items-center gap-1 group">
+                      Read More <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </a>
                   </div>
-                  <h3 className="font-bold text-lg mb-2 leading-tight">{item.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">{item.description}</p>
-                  <a href="#" className="text-accent font-semibold text-sm hover:text-accent/80 transition-colors inline-flex items-center gap-1 group">
-                    Read More <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                  </a>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-r from-accent to-secondary relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 0.1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.5 }}
+          className="absolute inset-0"
+        >
           <div className="absolute top-10 left-10 w-40 h-40 border-2 border-white rounded-full"></div>
           <div className="absolute bottom-20 right-20 w-60 h-60 border-2 border-white rounded-full"></div>
-        </div>
+          <div className="absolute top-1/3 right-1/4 w-20 h-20 border-2 border-white rounded-full"></div>
+        </motion.div>
         <div className="container text-center relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Ready to Begin Your Journey?</h2>
-          <div className="w-16 h-1 bg-ring mx-auto mb-6"></div>
-          <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-3xl md:text-5xl font-bold text-white mb-4"
+          >
+            Ready to Begin Your Journey?
+          </motion.h2>
+          <motion.div
+            initial={{ width: 0 }}
+            whileInView={{ width: 64 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="h-1 bg-ring mx-auto mb-6"
+          ></motion.div>
+          <motion.p
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            transition={{ delay: 0.1 }}
+            className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto"
+          >
             Join our community of learners and deepen your understanding of Scripture and faith.
             Take the first step towards your calling today.
-          </p>
-          <Link href="/apply" className="btn-gold text-lg px-10 py-5 inline-flex items-center gap-2">
-            Apply Now <ArrowRight size={22} />
-          </Link>
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Link href="/apply" className="btn-gold text-lg px-10 py-5 inline-flex items-center gap-2">
+              Apply Now <ArrowRight size={22} />
+            </Link>
+          </motion.div>
         </div>
       </section>
 
